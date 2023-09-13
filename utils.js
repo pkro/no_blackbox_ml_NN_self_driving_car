@@ -1,4 +1,3 @@
-const utils = {};
 /**
  * Performs linear interpolation between two points A and B.
  *
@@ -15,8 +14,44 @@ const utils = {};
  *
  * This function is commonly used in computer graphics, animations, and data approximations.
  *
- * @returns The interpolated value between A and B based on parameter t.
+ * @returns number The interpolated value between A and B based on parameter t.
+ * Example: lerp(-4, 6, 0.5) = 2 (get the value that is at 50% (0.5) of a range between -4 and 6
  */
-utils.lerp = (A, B, t) => {
+function lerp(A, B, t) {
     return A + (B - A) * t;
+}
+
+function getIntersection(A, B, C, D) {
+    const tTop = (D.x - C.x) * (A.y - C.y) - (D.y - C.y) * (A.x - C.x);
+    const uTop = (C.y - A.y) * (A.x - B.x) - (C.x - A.x) * (A.y - B.y);
+    const bottom = (D.y - C.y) * (B.x - A.x) - (D.x - C.x) * (B.y - A.y);
+
+    if (bottom !== 0) {
+        const t = tTop / bottom;
+        const u = uTop / bottom;
+        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+            return {
+                x: lerp(A.x, B.x, t),
+                y: lerp(A.y, B.y, t),
+                offset: t
+            };
+        }
+    }
+    return null;
+}
+
+function polysIntersect(polygon1, polygon2) {
+    for (let i = 0; i < polygon1.length; i++) {
+        for(let j=0; j<polygon2.length; j++) {
+            const touch = getIntersection(
+                polygon1[i],
+                polygon1[(i+1)%polygon1.length], // last point should connect to the first point
+                polygon2[j],
+                polygon2[(j+1)%polygon2.length]);
+            if (touch) {
+                return true;
+            }
+        }
+    }
+    return false;
 }

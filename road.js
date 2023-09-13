@@ -48,7 +48,7 @@ class Road {
 
         // draw the middle lane lines
         for (let i = 1; i <= this.laneCount - 1; i++) {
-            const x = utils.lerp(
+            const x = lerp(
                 this.left,
                 this.right,
                 i / this.laneCount // between 0-1

@@ -13,14 +13,90 @@ class Car {
         this.friction = 0.05;
 
         this.angle = 0;
+        this.damaged = false;
+
         this.steeringAngleIncrease = 0.03;
 
         this.controls = new Controls();
+        this.sensor = new Sensor(this);
+
     }
 
-    update() {
-        this.#move();
+    update(roadBorders) {
+        if (!this.damaged) {
+            this.#move();
+            this.polygon = this.#createPolygon();
+            this.damaged = this.#assessDamage(roadBorders);
+        }
+        this.sensor.update(roadBorders)
+    }
 
+    #assessDamage(roadBorders) {
+        for (let i = 0; i < roadBorders.length; i++) {
+            // roadborders are just lines, but that doesn't matter as a polygon can
+            // just have two points (and thus 2 lines, A->B and B->A
+            if(polysIntersect(this.polygon, roadBorders[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // figure out the points of the car
+    #createPolygon(){
+        // we can create any polygon we like, for now we just use a simple rectangle for the car
+        // we calculate it from the position data we have from the car:
+        // center of car (calculated from width/height) and angle
+        const points = [];
+        /*
+        This is the car
+        ------------------
+        |        |     / |
+        |        |    /  |
+        |        |𝛼 /rad |
+        |        |/      |
+        |                |
+        |                |
+        |                |
+        ------------------
+         */
+        // hypothenuse: the longes side of a right triangle (rechtwinkliges Dreieck)
+        const rad = Math.hypot(this.width, this.height)/2;
+        /*
+        ------------
+        |         /|
+        |        / |
+        |       /  |
+        |      /   |
+        |     /    |
+        |   /      |
+        |𝛼/        |
+        ------------
+         */
+        const alpha = Math.atan2(this.width, this.height);
+
+        // top right point of the car
+        points.push({
+            x:this.x-Math.sin(this.angle-alpha)*rad,
+            y:this.y-Math.cos(this.angle-alpha)*rad
+        });
+        // going counter-clockwise, next is upper left
+        points.push({
+            x:this.x-Math.sin(this.angle+alpha)*rad,
+            y:this.y-Math.cos(this.angle+alpha)*rad
+        });
+        // lower left
+        points.push({
+            x:this.x-Math.sin(Math.PI+this.angle-alpha)*rad,
+            y:this.y-Math.cos(Math.PI+this.angle-alpha)*rad
+        });
+        // lower right
+        points.push({
+            x:this.x-Math.sin(Math.PI+this.angle+alpha)*rad,
+            y:this.y-Math.cos(Math.PI+this.angle+alpha)*rad
+        });
+
+        return points;
     }
 
     #move() {
@@ -71,28 +147,21 @@ class Car {
         this.y -= Math.cos(this.angle) * this.speed;
     }
 
-    draw(ctx) {
-        ctx.save();
+    draw(ctx){
+        ctx.fillStyle="black";
+        if (this.damaged) {
+            ctx.fillStyle="red";
+        }
 
-        // move upper left corner of context to be at x/y pos of car
-        ctx.translate(this.x, this.y);
-        // apply rotation for steering; this way we don't have to do
-        // complicated calculations and draw diagonal lines
-        ctx.rotate(-this.angle);
         ctx.beginPath();
-
-        ctx.rect(
-            // we have already translated the ctx to the x/y coordinates x/y is at coords 0 / 0,
-            // so we just use width/height here for the x/y parameters
-            -this.width / 2,
-            -this.height / 2,
-            this.width,
-            this.height);
-        ctx.strokeStyle = 'green';
-        ctx.fillStyle = 'blue';
+        ctx.moveTo(this.polygon[0].x,this.polygon[0].y);
+        for(let i=1;i<this.polygon.length;i++){
+            ctx.lineTo(this.polygon[i].x,this.polygon[i].y);
+        }
         ctx.fill();
 
-        // restore ctx so the car is at the right position at the right angle
-        ctx.restore();
+        this.sensor.draw(ctx);
     }
+
+
 }

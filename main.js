@@ -9,11 +9,12 @@ const road = new Road(
 );
 const car = new Car(
     road.getLaneCenter(1), // set car in the middle of the 2nd lane
-    300, 30, 50);
-car.draw(ctx);
+    100, 30, 50);
+
+animate();
 
 function animate() {
-    car.update();
+    car.update(road.getBorders());
 
     // (re-)sizing the canvas also clears it, so we don't have to use clearRect
     canvas.height = window.innerHeight;
@@ -30,4 +31,3 @@ function animate() {
     requestAnimationFrame(animate)
 }
 
-animate();
