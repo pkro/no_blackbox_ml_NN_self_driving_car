@@ -9,12 +9,22 @@ const road = new Road(
 );
 const car = new Car(
     road.getLaneCenter(1), // set car in the middle of the 2nd lane
-    100, 30, 50);
+    100, 30, 50,
+    "KEYS");
+
+const traffic = [
+    new Car(road.getLaneCenter(1), -100, 30, 50, "DUMMY", 2)
+]
 
 animate();
 
 function animate() {
-    car.update(road.getBorders());
+
+    for (let i = 0; i < traffic.length; i++) {
+        traffic[i].update(road.getBorders(), []);
+    }
+
+    car.update(road.getBorders(), traffic);
 
     // (re-)sizing the canvas also clears it, so we don't have to use clearRect
     canvas.height = window.innerHeight;
@@ -25,7 +35,12 @@ function animate() {
     ctx.translate(0, -car.y+canvas.height*0.7);
 
     road.draw(ctx);
-    car.draw(ctx);
+
+    for (let i = 0; i < traffic.length; i++) {
+        traffic[i].draw(ctx, "red");
+    }
+
+    car.draw(ctx, "blue");
 
     ctx.restore();
     requestAnimationFrame(animate)

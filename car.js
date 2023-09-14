@@ -1,7 +1,7 @@
-"use strict"
+"use strict";
 
 class Car {
-    constructor(x, y, width, height) {
+    constructor(x, y, width, height, controlType, maxSpeed = 3) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -9,33 +9,48 @@ class Car {
 
         this.speed = 0;
         this.acceleration = 0.2;
-        this.maxSpeed = 3;
+        this.maxSpeed = maxSpeed;
         this.friction = 0.05;
 
         this.angle = 0;
         this.damaged = false;
 
+        this.polygon = [];
+
         this.steeringAngleIncrease = 0.03;
 
-        this.controls = new Controls();
-        this.sensor = new Sensor(this);
+        if (controlType !== "DUMMY") {
+            this.sensor = new Sensor(this);
+        }
+        this.controls = new Controls(controlType);
 
     }
 
-    update(roadBorders) {
+    update(roadBorders, traffic) {
         if (!this.damaged) {
             this.#move();
             this.polygon = this.#createPolygon();
-            this.damaged = this.#assessDamage(roadBorders);
+            this.damaged = this.#assessDamage(roadBorders, traffic);
         }
-        this.sensor.update(roadBorders)
+        // no sensor for dummy cars
+        if (this.sensor) {
+            this.sensor.update(roadBorders, traffic);
+        }
     }
 
-    #assessDamage(roadBorders) {
+    #assessDamage(roadBorders, traffic) {
         for (let i = 0; i < roadBorders.length; i++) {
             // roadborders are just lines, but that doesn't matter as a polygon can
             // just have two points (and thus 2 lines, A->B and B->A
-            if(polysIntersect(this.polygon, roadBorders[i])) {
+            if (polysIntersect(this.polygon, roadBorders[i])) {
+                return true;
+            }
+        }
+
+        for (let i = 0; i < traffic.length; i++) {
+            // roadborders are just lines, but that doesn't matter as a polygon can
+            // just have two points (and thus 2 lines, A->B and B->A
+            if (polysIntersect(this.polygon, traffic[i].getPolygon())) {
                 return true;
             }
         }
@@ -43,7 +58,7 @@ class Car {
     }
 
     // figure out the points of the car
-    #createPolygon(){
+    #createPolygon() {
         // we can create any polygon we like, for now we just use a simple rectangle for the car
         // we calculate it from the position data we have from the car:
         // center of car (calculated from width/height) and angle
@@ -61,7 +76,7 @@ class Car {
         ------------------
          */
         // hypothenuse: the longes side of a right triangle (rechtwinkliges Dreieck)
-        const rad = Math.hypot(this.width, this.height)/2;
+        const rad = Math.hypot(this.width, this.height) / 2;
         /*
         ------------
         |         /|
@@ -77,23 +92,23 @@ class Car {
 
         // top right point of the car
         points.push({
-            x:this.x-Math.sin(this.angle-alpha)*rad,
-            y:this.y-Math.cos(this.angle-alpha)*rad
+            x: this.x - Math.sin(this.angle - alpha) * rad,
+            y: this.y - Math.cos(this.angle - alpha) * rad
         });
         // going counter-clockwise, next is upper left
         points.push({
-            x:this.x-Math.sin(this.angle+alpha)*rad,
-            y:this.y-Math.cos(this.angle+alpha)*rad
+            x: this.x - Math.sin(this.angle + alpha) * rad,
+            y: this.y - Math.cos(this.angle + alpha) * rad
         });
         // lower left
         points.push({
-            x:this.x-Math.sin(Math.PI+this.angle-alpha)*rad,
-            y:this.y-Math.cos(Math.PI+this.angle-alpha)*rad
+            x: this.x - Math.sin(Math.PI + this.angle - alpha) * rad,
+            y: this.y - Math.cos(Math.PI + this.angle - alpha) * rad
         });
         // lower right
         points.push({
-            x:this.x-Math.sin(Math.PI+this.angle+alpha)*rad,
-            y:this.y-Math.cos(Math.PI+this.angle+alpha)*rad
+            x: this.x - Math.sin(Math.PI + this.angle + alpha) * rad,
+            y: this.y - Math.cos(Math.PI + this.angle + alpha) * rad
         });
 
         return points;
@@ -147,20 +162,25 @@ class Car {
         this.y -= Math.cos(this.angle) * this.speed;
     }
 
-    draw(ctx){
-        ctx.fillStyle="black";
+    draw(ctx, color = "blue") {
+        ctx.fillStyle = color;
         if (this.damaged) {
-            ctx.fillStyle="red";
+            ctx.fillStyle = "gray";
         }
 
         ctx.beginPath();
-        ctx.moveTo(this.polygon[0].x,this.polygon[0].y);
-        for(let i=1;i<this.polygon.length;i++){
-            ctx.lineTo(this.polygon[i].x,this.polygon[i].y);
+        ctx.moveTo(this.polygon[0].x, this.polygon[0].y);
+        for (let i = 1; i < this.polygon.length; i++) {
+            ctx.lineTo(this.polygon[i].x, this.polygon[i].y);
         }
         ctx.fill();
+        if (this.sensor) {
+            this.sensor.draw(ctx);
+        }
+    }
 
-        this.sensor.draw(ctx);
+    getPolygon() {
+        return this.polygon;
     }
 
 

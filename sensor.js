@@ -11,21 +11,21 @@ class Sensor {
         this.readings = [];
     }
 
-    update(roadBorders) {
+    update(roadBorders, traffic) {
         this.#castRays();
         this.readings = [];
 
         for (const ray of this.rays) {
             // check if ray intersects with any of the road borders
             this.readings.push(
-                this.#getReading(ray, roadBorders)
-            )
+                this.#getReading(ray, roadBorders, traffic)
+            );
         }
     }
 
     // returns the point with offset of the intersection point with the closest distance to the ray origin
     // return type: {x, y, offset}
-    #getReading(ray, roadBorders) {
+    #getReading(ray, roadBorders, traffic) {
         let touches = [];
         for (let i = 0; i < roadBorders.length; i++) {
             const touch = getIntersection(
@@ -39,14 +39,28 @@ class Sensor {
             }
         }
 
-        if(touches.length === 0) {
+        for (let i = 0; i < traffic.length; i++) {
+            const poly = traffic[i].getPolygon();
+            for (let j = 0; j < poly.length; j++) {
+                const touch = getIntersection(
+                    ray[0],
+                    ray[1],
+                    poly[j],
+                    poly[(j + 1) % poly.length]);
+                if (touch) {
+                    touches.push(touch);
+                }
+            }
+        }
+
+        if (touches.length === 0) {
             return null;
         } else {
             // offset = distance of ray origin to touch point
             const offsets = touches.map(e => e.offset);
             const minOffset = Math.min(...offsets);
 
-            return touches.find(e=>e.offset===minOffset);
+            return touches.find(e => e.offset === minOffset);
         }
     }
 
@@ -103,14 +117,14 @@ class Sensor {
             let end = this.rays[i][1];
             // if we intersect the borders at some point, that point
             // will be the end (so the ray stops at the intersection point)
-            if(this.readings[i]) {
+            if (this.readings[i]) {
                 end = this.readings[i];
             }
             const {x: rayOriginX, y: rayOriginY} = this.rays[i][0];
 
             // draw line from ray origin to ray end OR intersection path
             ctx.beginPath();
-            ctx.lineWidth=2;
+            ctx.lineWidth = 2;
             ctx.strokeStyle = "yellow";
             ctx.moveTo(rayOriginX, rayOriginY);
             ctx.lineTo(end.x, end.y);
@@ -118,7 +132,7 @@ class Sensor {
 
             // draw line FROM end of ray to intersection
             ctx.beginPath();
-            ctx.lineWidth=2;
+            ctx.lineWidth = 2;
             ctx.strokeStyle = "black";
 
             ctx.moveTo(this.rays[i][1].x, this.rays[i][1].y);

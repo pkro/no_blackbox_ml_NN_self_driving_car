@@ -1,13 +1,22 @@
-"use strict"
+"use strict";
 
 class Controls {
-    constructor() {
+    constructor(controlType) {
         this.forward = false;
         this.left = false;
         this.right = false;
         this.reverse = false;
 
-        this.#addKeyboardListeners();
+        switch (controlType) {
+            case "KEYS":
+                this.#addKeyboardListeners();
+                break;
+            case "DUMMY":
+                this.forward = true;
+                break;
+            default:
+                break;
+        }
     }
 
     #addKeyboardListeners() {
@@ -28,7 +37,7 @@ class Controls {
             }
 
             //console.table(this);
-        }
+        };
 
         document.onkeyup = (event) => {
             switch (event.key) {
@@ -45,7 +54,7 @@ class Controls {
                     this.reverse = false;
                     break;
             }
-        }
+        };
         //console.table(this);
 
 
