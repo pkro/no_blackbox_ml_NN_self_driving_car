@@ -55,3 +55,17 @@ function polysIntersect(polygon1, polygon2) {
     }
     return false;
 }
+
+function getRGBA(value) {
+    // value is between -1 and 1, and we want values
+    // close to zero to be almost transparent and values
+    // closer to one strong
+    const alpha = Math.abs(value);
+    // we assign a different base color depending on negative or positive weights
+    // yellow = positive, blue = negative
+    // needlessly complicated for the base color, but I guess this will come in later
+    const R = value < 0 ? 0 : 255;
+    const G = R;
+    const B = value > 0 ? 0 : 255;
+    return `rgba(${R},${G},${B},${alpha})`;
+}

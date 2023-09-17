@@ -19,8 +19,15 @@ class Car {
 
         this.steeringAngleIncrease = 0.03;
 
+        this.useBrain = controlType === 'AI';
+
         if (controlType !== "DUMMY") {
             this.sensor = new Sensor(this);
+            this.brain = new NeuralNetwork([
+                this.sensor.rayCount, // input layer
+                6, // 1 hidden layer
+                4 // output layer (the directions, e.g. forward,  left, right, reverse)
+            ]);
         }
         this.controls = new Controls(controlType);
 
@@ -35,6 +42,23 @@ class Car {
         // no sensor for dummy cars
         if (this.sensor) {
             this.sensor.update(roadBorders, traffic);
+            const offsets = this.sensor.readings.map(
+                s => s == null
+                    ? 0
+                    : 1 - s.offset // we want the reading to be lower the farther away the obstacle is, like real sensors do
+            );
+
+            const outputs = NeuralNetwork.feedForward(offsets, this.brain);
+
+
+            if (this.useBrain) {
+                // which output neuron is mapped to forward, left, etc. is completely arbitrary
+                this.controls.forward = outputs[0];
+                this.controls.left = outputs[1];
+                this.controls.right = outputs[2];
+                this.controls.reverse = outputs[3];
+
+            }
         }
     }
 
