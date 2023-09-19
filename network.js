@@ -20,6 +20,30 @@ class NeuralNetwork {
 
         return outputs
     }
+
+    static mutate(network, amount = 1) {
+        // amount = 0 -> weights / biases stay the same
+        // amount = 1 -> weights / biases are assigned a random value
+        // amount between 0 and 1: weights / biases are assigned a value between the current and a random value
+        network.levels.forEach(level=>{
+            for (let i = 0; i < level.biases.length; i++) {
+                level.biases[i] = lerp(
+                    level.biases[i],
+                    Math.random()*2-1,
+                    amount
+                )
+            }
+            for (let i = 0; i < level.weights.length; i++) {
+                for (let j = 0; j < level.weights[i].length; j++) {
+                    level.weights[i][j] = lerp(
+                        level.weights[i][j],
+                        Math.random() * 2 - 1,
+                        amount
+                    )
+                }
+            }
+        });
+    }
 }
 
 class Level {
